@@ -13,7 +13,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Rosto Kids">
-  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
 
   <style>
     :root{
@@ -563,63 +563,63 @@
   const remoteAudio = document.getElementById("remoteAudio");
 
   // ===== OLHOS (pupilas) =====
-const pupilL = document.querySelector(".eye.left .pupil");
-const pupilR = document.querySelector(".eye.right .pupil");
+  const pupilL = document.querySelector(".eye.left .pupil");
+  const pupilR = document.querySelector(".eye.right .pupil");
 
-const PUPIL_MAX = 10;         // px (limite de movimento)
-const EYE_SMOOTH = 0.18;      // 0.10 mais suave / 0.25 mais rápido
-let eyeX = 0, eyeY = 0;
-let targetX = 0, targetY = 0;
-let nextSaccadeAt = 0;
+  const PUPIL_MAX = 10;         // px (limite de movimento)
+  const EYE_SMOOTH = 0.18;      // 0.10 mais suave / 0.25 mais rápido
+  let eyeX = 0, eyeY = 0;
+  let targetX = 0, targetY = 0;
+  let nextSaccadeAt = 0;
 
-// vamos armazenar o nível do microfone aqui:
-let lastMicLevel = 0;
+  // vamos armazenar o nível do microfone aqui:
+  let lastMicLevel = 0;
 
-function clamp2(v, a, b){ return Math.max(a, Math.min(b, v)); }
+  function clamp2(v, a, b){ return Math.max(a, Math.min(b, v)); }
 
-function setPupils(dx, dy){
-  dx = clamp2(dx, -PUPIL_MAX, PUPIL_MAX);
-  dy = clamp2(dy, -PUPIL_MAX, PUPIL_MAX);
-  const t = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
-  if (pupilL) pupilL.style.transform = t;
-  if (pupilR) pupilR.style.transform = t;
-}
-
-function rand(min, max){ return min + Math.random() * (max - min); }
-
-function eyesLoop(){
-  if (!running){
-    requestAnimationFrame(eyesLoop);
-    return;
+  function setPupils(dx, dy){
+    dx = clamp2(dx, -PUPIL_MAX, PUPIL_MAX);
+    dy = clamp2(dy, -PUPIL_MAX, PUPIL_MAX);
+    const t = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+    if (pupilL) pupilL.style.transform = t;
+    if (pupilR) pupilR.style.transform = t;
   }
 
-  const now = performance.now();
+  function rand(min, max){ return min + Math.random() * (max - min); }
 
-  // "Falando no microfone": speaking OU mic acima do limiar (ajuste se quiser)
-  const userTalking = speaking || (lastMicLevel >= VOICE_ON * 0.75);
-
-  // Decide novo alvo de vez em quando (saccade)
-  if (now >= nextSaccadeAt){
-    if (userTalking){
-      // enquanto você fala: movimentos menores e mais frequentes + leve olhar pra baixo
-      targetX = rand(-4, 4);
-      targetY = rand(2, 7);
-      nextSaccadeAt = now + rand(180, 380);
-    } else {
-      // silêncio: passeia mais amplo e mais lento
-      targetX = rand(-8, 8);
-      targetY = rand(-6, 6);
-      nextSaccadeAt = now + rand(600, 1400);
+  function eyesLoop(){
+    if (!running){
+      requestAnimationFrame(eyesLoop);
+      return;
     }
+
+    const now = performance.now();
+
+    // "Falando no microfone": speaking OU mic acima do limiar (ajuste se quiser)
+    const userTalking = speaking || (lastMicLevel >= VOICE_ON * 0.75);
+
+    // Decide novo alvo de vez em quando (saccade)
+    if (now >= nextSaccadeAt){
+      if (userTalking){
+        // enquanto você fala: movimentos menores e mais frequentes + leve olhar pra baixo
+        targetX = rand(-4, 4);
+        targetY = rand(2, 7);
+        nextSaccadeAt = now + rand(180, 380);
+      } else {
+        // silêncio: passeia mais amplo e mais lento
+        targetX = rand(-8, 8);
+        targetY = rand(-6, 6);
+        nextSaccadeAt = now + rand(600, 1400);
+      }
+    }
+
+    // Suaviza o movimento
+    eyeX += (targetX - eyeX) * EYE_SMOOTH;
+    eyeY += (targetY - eyeY) * EYE_SMOOTH;
+
+    setPupils(eyeX, eyeY);
+    requestAnimationFrame(eyesLoop);
   }
-
-  // Suaviza o movimento
-  eyeX += (targetX - eyeX) * EYE_SMOOTH;
-  eyeY += (targetY - eyeY) * EYE_SMOOTH;
-
-  setPupils(eyeX, eyeY);
-  requestAnimationFrame(eyesLoop);
-}
 
   // Boca (somente REMOTO)
   const SENS = 2.15;      // um pouco mais forte pro remoto
