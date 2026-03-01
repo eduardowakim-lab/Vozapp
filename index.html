@@ -12,7 +12,7 @@
   <!-- ✅ iOS (atalho na tela inicial) -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Rosto Kids">
+  <meta name="apple-mobile-web-app-title" content="Robô">
   <link rel="apple-touch-icon" href="icon-192.png">
 
   <style>
@@ -396,7 +396,7 @@
       .micBtn button{ transition:none; }
     }
 
-    /* ✅ Botão instalar (visual no tema do app) */
+    /* ✅ Botão instalar (Android instala / iOS abre instruções) */
     .install-btn{
       position: fixed;
       right: calc(env(safe-area-inset-right) + 12px);
@@ -417,6 +417,69 @@
       opacity: .95;
     }
     .install-btn:active{ transform: scale(.98); filter: brightness(1.03); }
+
+    /* ✅ Modal iOS */
+    .modal{
+      position: fixed;
+      inset: 0;
+      z-index: 10000;
+      display:none;
+      align-items: center;
+      justify-content: center;
+      padding: 18px;
+      background: rgba(0,0,0,.55);
+      backdrop-filter: blur(10px);
+    }
+    .modal .card{
+      width: min(520px, 100%);
+      border-radius: 18px;
+      background: rgba(10, 25, 40, .88);
+      border: 1px solid rgba(255,255,255,.12);
+      box-shadow: 0 20px 60px rgba(0,0,0,.55);
+      padding: 16px 16px 14px;
+    }
+    .modal .head{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .modal .title{
+      font-weight: 900;
+      font-size: 16px;
+      color: #e8f7ff;
+      letter-spacing: .2px;
+    }
+    .modal .close{
+      border:none;
+      background: rgba(255,255,255,.10);
+      color: rgba(255,255,255,.92);
+      padding: 10px 12px;
+      border-radius: 12px;
+      cursor:pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .modal .steps{
+      font-size: 14px;
+      line-height: 1.35;
+      color: rgba(210,240,255,.95);
+      margin: 8px 0 10px;
+    }
+    .modal ol{
+      margin: 10px 0 0 18px;
+      padding: 0;
+    }
+    .modal li{ margin: 8px 0; }
+    .modal .tip{
+      margin-top: 10px;
+      font-size: 13px;
+      opacity: .92;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.22);
+    }
   </style>
 </head>
 <body>
@@ -489,8 +552,31 @@
 
   <audio id="remoteAudio" autoplay playsinline style="display:none"></audio>
 
-  <!-- ✅ Botão para instalar (aparece só quando o navegador permitir) -->
+  <!-- ✅ Botão para instalar (Android instala / iOS abre instruções) -->
   <button class="install-btn" id="installBtn" type="button" aria-label="Instalar app">⬇ Instalar app</button>
+
+  <!-- ✅ Modal com instruções iOS -->
+  <div class="modal" id="iosModal" role="dialog" aria-modal="true" aria-label="Instalar no iPhone">
+    <div class="card">
+      <div class="head">
+        <div class="title">Instalar no iPhone (iOS)</div>
+        <button class="close" id="iosClose" type="button">Fechar</button>
+      </div>
+
+      <div class="steps">
+        No iPhone/iPad, a instalação é manual pelo Safari:
+        <ol>
+          <li>Abra este site no <strong>Safari</strong>.</li>
+          <li>Toque em <strong>Compartilhar</strong> (quadrado com seta pra cima).</li>
+          <li>Toque em <strong>Adicionar à Tela de Início</strong>.</li>
+          <li>Confirme em <strong>Adicionar</strong>.</li>
+        </ol>
+        <div class="tip">
+          Se você não achar “Adicionar à Tela de Início”, role a lista do Compartilhar um pouco para baixo.
+        </div>
+      </div>
+    </div>
+  </div>
 
 <script>
 (() => {
@@ -501,30 +587,86 @@
     });
   }
 
-  // ✅ PWA: botão "Instalar app" (Chrome Android)
-  let deferredPrompt = null;
+  // ====== Botão Instalar: Android (prompt) / iOS (modal) ======
   const installBtn = document.getElementById("installBtn");
+  const iosModal = document.getElementById("iosModal");
+  const iosClose = document.getElementById("iosClose");
 
-  window.addEventListener("beforeinstallprompt", (e) => {
-    // impede o mini-infobar automático
-    e.preventDefault();
-    deferredPrompt = e;
-    if (installBtn) installBtn.style.display = "block";
+  const ua = navigator.userAgent || "";
+  const isIOS = /iPhone|iPad|iPod/i.test(ua);
+  const isStandalone =
+    window.matchMedia("(display-mode: standalone)").matches ||
+    window.matchMedia("(display-mode: fullscreen)").matches ||
+    window.navigator.standalone === true;
+
+  function showInstallButton(text){
+    if (!installBtn) return;
+    installBtn.textContent = text;
+    installBtn.style.display = "block";
+  }
+  function hideInstallButton(){
+    if (!installBtn) return;
+    installBtn.style.display = "none";
+  }
+  function openIOSModal(){
+    if (!iosModal) return;
+    iosModal.style.display = "flex";
+  }
+  function closeIOSModal(){
+    if (!iosModal) return;
+    iosModal.style.display = "none";
+  }
+
+  iosClose?.addEventListener("click", closeIOSModal);
+  iosModal?.addEventListener("click", (e) => {
+    if (e.target === iosModal) closeIOSModal();
   });
 
-  if (installBtn){
-    installBtn.addEventListener("click", async () => {
-      try{
-        if (!deferredPrompt) return;
-        installBtn.style.display = "none";
-        deferredPrompt.prompt();
-        await deferredPrompt.userChoice;
-      } catch(_){
-      } finally {
-        deferredPrompt = null;
-      }
-    });
+  // Se já está instalado, não mostra nada
+  if (isStandalone){
+    hideInstallButton();
+  } else {
+    // iOS: mostra botão que abre instruções (Safari)
+    if (isIOS){
+      showInstallButton("📲 Instalar no iPhone");
+      installBtn?.addEventListener("click", openIOSModal);
+    }
   }
+
+  // Android/Chrome: prompt real
+  let deferredPrompt = null;
+
+  window.addEventListener("beforeinstallprompt", (e) => {
+    // iOS não dispara isso, então só entra aqui em navegadores que suportam
+    e.preventDefault();
+    deferredPrompt = e;
+
+    // se não for iOS e não estiver instalado, mostra o botão
+    if (!isIOS && !isStandalone){
+      showInstallButton("⬇ Instalar app");
+    }
+  });
+
+  window.addEventListener("appinstalled", () => {
+    deferredPrompt = null;
+    hideInstallButton();
+  });
+
+  installBtn?.addEventListener("click", async () => {
+    // Se iOS, aqui já está preso no handler de abrir modal (acima)
+    if (isIOS) return;
+
+    // Android: chama prompt
+    if (!deferredPrompt) return;
+    try{
+      hideInstallButton();
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+    }catch(_){
+    }finally{
+      deferredPrompt = null;
+    }
+  });
 
   // ====== CONFIG ======
   const SESSION_ENDPOINT = "https://openai-realtime-proxy.eduardo-wakim.workers.dev/session";
