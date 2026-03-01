@@ -1,0 +1,953 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Rosto com áudio (kids)</title>
+
+  <!-- ✅ PWA -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#071a2e">
+
+  <!-- ✅ iOS (atalho na tela inicial) -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Rosto Kids">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+
+  <style>
+    :root{
+      --bg1:#071a2e;
+      --bg2:#02060c;
+
+      --face1:#12385a;
+      --face2:#0a1f33;
+
+      --iris1:#6ad0ff;
+      --iris2:#2ea9ff;
+      --glow: rgba(80, 190, 255, .35);
+
+      --btn1:#39c6ff;
+      --btn2:#2a8bff;
+      --btnText:#07121c;
+
+      --topPad: 10px;
+      --sidePad: 12px;
+      --frameMaxH: 72vh;
+    }
+
+    *{box-sizing:border-box}
+    html, body{height:100%}
+
+    body{
+      margin:0;
+      min-height:100svh;
+      display:grid;
+      grid-template-rows: auto 1fr;
+      align-items:start;
+      padding:
+        calc(env(safe-area-inset-top) + var(--topPad))
+        calc(env(safe-area-inset-right) + var(--sidePad))
+        calc(env(safe-area-inset-bottom) + 14px)
+        calc(env(safe-area-inset-left) + var(--sidePad));
+      background: radial-gradient(1200px 700px at 50% 35%, var(--bg1), var(--bg2));
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color:#cfeaff;
+      user-select:none;
+      touch-action: manipulation;
+      gap: 12px;
+    }
+
+    .wrap{
+      width: min(560px, 100%);
+      height: min(var(--frameMaxH), 92vw);
+      aspect-ratio: 1/1;
+      display:grid;
+      place-items:center;
+      position:relative;
+      justify-self:center;
+    }
+
+    .face{
+      width:100%;
+      height:100%;
+      border-radius: 28px;
+      background: radial-gradient(900px 700px at 50% 15%, var(--face1), var(--face2));
+      box-shadow:
+        0 24px 60px rgba(0,0,0,.55),
+        inset 0 0 0 2px rgba(255,255,255,.05);
+      position:relative;
+      overflow:hidden;
+    }
+
+    .face::before{
+      content:"";
+      position:absolute;
+      inset:-40%;
+      background: radial-gradient(closest-side, rgba(160,235,255,.12), transparent 70%);
+      transform: translate(12%, 8%) rotate(18deg);
+      filter: blur(2px);
+    }
+
+    .meter{
+      position:absolute;
+      top: 14px;
+      left: 14px;
+      right: 14px;
+      height: 8px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.07);
+      overflow:hidden;
+      border: 1px solid rgba(255,255,255,.10);
+    }
+    .meter > div{
+      height:100%;
+      width:0%;
+      background: rgba(120,220,255,.92);
+    }
+
+    .eyes{
+      position:absolute;
+      top: 22%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80%;
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap: 12%;
+    }
+
+    .eye{
+      width: 36%;
+      aspect-ratio: 1/1;
+      border-radius: 999px;
+      background:
+        radial-gradient(circle at 35% 35%, #ffffff 0 10%, transparent 11%),
+        radial-gradient(circle at 60% 60%, rgba(255,255,255,.65) 0 6%, transparent 7%),
+        radial-gradient(circle at 50% 55%, var(--iris1) 0 44%, var(--iris2) 62%, #0b4a74 100%);
+      box-shadow:
+        0 0 40px var(--glow),
+        inset 0 -18px 28px rgba(0,0,0,.22),
+        inset 0 0 0 3px rgba(255,255,255,.08);
+      position:relative;
+      overflow:hidden;
+    }
+
+    .pupil{
+      position:absolute;
+      left:50%;
+      top:56%;
+      transform: translate(-50%,-50%);
+      width: 26%;
+      height: 26%;
+      border-radius: 999px;
+      background: radial-gradient(circle at 35% 35%, #2b2b2b 0 35%, #0a0a0a 60% 100%);
+      box-shadow: 0 0 10px rgba(0,0,0,.35);
+      opacity: .95;
+    }
+
+    .brow{
+      position:absolute;
+      top: 6%;
+      left: 10%;
+      right: 10%;
+      height: 26%;
+      border-top-left-radius: 999px;
+      border-top-right-radius: 999px;
+      border-top: 10px solid rgba(255,255,255,.10);
+      transform: rotate(-6deg);
+    }
+    .eye.right .brow{ transform: rotate(6deg); }
+
+    .lid{
+      position:absolute;
+      inset:-2px;
+      background: radial-gradient(700px 400px at 50% 0%, rgba(255,255,255,.10), rgba(0,0,0,0) 60%),
+                  linear-gradient(#0a1a2a, #07121c);
+      transform: translateY(-110%);
+      border-radius: 999px;
+      animation: blink 4.3s infinite;
+      opacity: .95;
+    }
+    .eye.right .lid{ animation-delay: .22s; }
+    @keyframes blink{
+      0%, 92%, 100% { transform: translateY(-110%); }
+      94% { transform: translateY(-8%); }
+      95% { transform: translateY(18%); }
+      96% { transform: translateY(-110%); }
+    }
+
+    .cheek{
+      position:absolute;
+      top: 44%;
+      width: 22%;
+      height: 14%;
+      border-radius: 999px;
+      background: radial-gradient(circle at 50% 50%, rgba(255,160,190,.55), transparent 70%);
+      opacity: .85;
+    }
+    .cheek.left{ left: 12%; }
+    .cheek.right{ right: 12%; }
+
+    .mouth-wrap{
+      position:absolute;
+      left:50%;
+      bottom: 18%;
+      transform: translateX(-50%);
+      width: 34%;
+      height: 24%;
+      display:grid;
+      place-items:center;
+    }
+
+    .mouth{
+      width: 100%;
+      height: 52%;
+      border-radius: 0 0 999px 999px;
+      background: linear-gradient(#1a0a0f, #0c0507);
+      box-shadow:
+        0 14px 26px rgba(0,0,0,.45),
+        inset 0 6px 14px rgba(255,255,255,.05);
+      position:relative;
+      overflow:hidden;
+      border: 2px solid rgba(255,255,255,.06);
+      transform-origin: center;
+    }
+
+    .smile-line{
+      position:absolute;
+      top: -32%;
+      left: -8%;
+      right: -8%;
+      height: 90%;
+      border-radius: 999px;
+      border: 6px solid rgba(255,255,255,.09);
+      border-color: rgba(255,255,255,.11) transparent transparent transparent;
+      pointer-events:none;
+    }
+
+    .teeth{
+      position:absolute;
+      top: 6%;
+      left: 18%;
+      right: 18%;
+      height: 22%;
+      border-radius: 0 0 16px 16px;
+      background: rgba(255,255,255,.85);
+      opacity: 0;
+    }
+
+    .tongue{
+      position:absolute;
+      left:50%;
+      bottom:-12%;
+      transform: translateX(-50%);
+      width: 62%;
+      height: 78%;
+      border-radius: 999px 999px 70% 70%;
+      background: radial-gradient(circle at 50% 35%, #ff9a9a 0 18%, #ff3b3b 55%, #c71818 100%);
+      box-shadow: inset 0 -10px 18px rgba(0,0,0,.25);
+      opacity: 0;
+    }
+
+    .micBtn{
+      position:absolute;
+      inset:0;
+      display:grid;
+      place-items:center;
+      padding: 18px;
+    }
+    .micBtn button{
+      -webkit-tap-highlight-color: transparent;
+      appearance:none;
+      border:none;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      gap: 12px;
+      padding: 16px 18px;
+      border-radius: 18px;
+      font-weight: 800;
+      font-size: 18px;
+      color: var(--btnText);
+      background: linear-gradient(135deg, var(--btn1), var(--btn2));
+      box-shadow:
+        0 18px 36px rgba(0,0,0,.35),
+        inset 0 0 0 2px rgba(255,255,255,.25);
+      max-width: min(360px, 86vw);
+      transition: transform .12s ease, filter .12s ease, opacity .12s ease;
+    }
+    .micBtn button:active{
+      transform: scale(.98);
+      filter: brightness(1.03);
+    }
+    .micBtn button:disabled{
+      cursor: default;
+      opacity: .85;
+      filter: grayscale(.08);
+    }
+
+    .micIcon{
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background: rgba(255,255,255,.25);
+      display:grid;
+      place-items:center;
+      box-shadow: inset 0 0 0 2px rgba(255,255,255,.22);
+      flex: 0 0 auto;
+    }
+    .micIcon svg{ width: 22px; height: 22px; }
+
+    .btnText{
+      display:flex;
+      flex-direction:column;
+      line-height:1.05;
+      text-align:left;
+    }
+    .btnTitle{ font-size: 18px; }
+    .sub{
+      font-size: 13px;
+      font-weight: 650;
+      opacity:.95;
+      margin-top: 6px;
+    }
+
+    .hint{
+      position:absolute;
+      left:0; right:0; bottom: 10px;
+      display:grid;
+      place-items:center;
+      padding: 12px 16px;
+      pointer-events:none;
+    }
+    .pill{
+      background: rgba(0,0,0,.30);
+      border: 1px solid rgba(255,255,255,.10);
+      border-radius: 999px;
+      padding: 10px 14px;
+      backdrop-filter: blur(8px);
+      font-size: 13px;
+      line-height: 1.2;
+      opacity:.95;
+      text-align:center;
+    }
+    .pill strong{ color:#fff; font-weight:800; }
+
+    .robot-panel{
+      width: 100%;
+      justify-self: center;
+      overflow:hidden;
+      border-radius: 18px;
+      box-shadow: 0 18px 40px rgba(0,0,0,.35);
+      background: rgba(255,255,255,.04);
+      border: 1px solid rgba(255,255,255,.08);
+      display:grid;
+      place-items:center;
+    }
+    .robot-panel img{
+      width: 100%;
+      height: 100%;
+      display:block;
+      object-fit: contain;
+      object-position: center;
+    }
+
+    .fs-btn{
+      position: fixed;
+      top: calc(env(safe-area-inset-top) + 8px);
+      right: calc(env(safe-area-inset-right) + 8px);
+      z-index: 9999;
+      width: 40px;
+      height: 40px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.25);
+      color: rgba(255,255,255,.92);
+      display:grid;
+      place-items:center;
+      cursor:pointer;
+      -webkit-tap-highlight-color: transparent;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 12px 26px rgba(0,0,0,.28);
+      opacity: .75;
+      transition: opacity .15s ease, transform .12s ease;
+    }
+    .fs-btn:active{ transform: scale(.98); }
+    .fs-btn:hover{ opacity: .95; }
+
+    .fs-btn svg{ width: 18px; height: 18px; }
+
+    .fs-btn.on{
+      opacity: .95;
+      border-color: rgba(120,220,255,.35);
+      box-shadow: 0 12px 26px rgba(0,0,0,.28), 0 0 18px rgba(120,220,255,.18);
+    }
+
+    @media (max-height: 680px){
+      :root{ --frameMaxH: 68vh; }
+      .hint{ bottom: 6px; }
+      .micBtn button{ font-size: 16px; }
+    }
+
+    @media (prefers-reduced-motion: reduce){
+      .lid{ animation:none; }
+      .micBtn button{ transition:none; }
+    }
+  </style>
+</head>
+<body>
+
+  <button class="fs-btn" id="fsBtn" type="button" aria-label="Tela cheia">
+    <svg viewBox="0 0 24 24" fill="none">
+      <path d="M8 3H5a2 2 0 0 0-2 2v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      <path d="M16 3h3a2 2 0 0 1 2 2v3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      <path d="M8 21H5a2 2 0 0 1-2-2v-3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      <path d="M16 21h3a2 2 0 0 0 2-2v-3" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+    </svg>
+  </button>
+
+  <div class="wrap" id="app">
+    <div class="face">
+      <div class="meter"><div id="bar"></div></div>
+
+      <div class="eyes">
+        <div class="eye left">
+          <div class="brow"></div>
+          <div class="pupil"></div>
+          <div class="lid"></div>
+        </div>
+        <div class="eye right">
+          <div class="brow"></div>
+          <div class="pupil"></div>
+          <div class="lid"></div>
+        </div>
+      </div>
+
+      <div class="cheek left"></div>
+      <div class="cheek right"></div>
+
+      <div class="mouth-wrap">
+        <div class="mouth" id="mouth">
+          <div class="smile-line"></div>
+          <div class="teeth" id="teeth"></div>
+          <div class="tongue" id="tongue"></div>
+        </div>
+      </div>
+
+      <div class="micBtn" id="micBtn">
+        <button id="startBtn" type="button" aria-label="Ligar microfone">
+          <span class="micIcon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3Z" stroke="rgba(7,18,28,.95)" stroke-width="2" stroke-linecap="round"/>
+              <path d="M19 11a7 7 0 0 1-14 0" stroke="rgba(7,18,28,.95)" stroke-width="2" stroke-linecap="round"/>
+              <path d="M12 18v3" stroke="rgba(7,18,28,.95)" stroke-width="2" stroke-linecap="round"/>
+              <path d="M9 21h6" stroke="rgba(7,18,28,.95)" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+          </span>
+          <span class="btnText">
+            <span class="btnTitle" id="btnTitle">Ligar microfone</span>
+            <span class="sub" id="btnSub">Toque aqui e deixe o rostinho “falar” 😊</span>
+          </span>
+        </button>
+      </div>
+
+      <div class="hint" id="hint">
+        <div class="pill" id="pillText">
+          <strong>Dica:</strong> se der “negado”, abre o cadeado do navegador e permite o microfone.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="robot-panel" aria-label="Imagem do robô">
+    <img src="robo.jpg" alt="Robô" />
+  </div>
+
+  <audio id="remoteAudio" autoplay playsinline style="display:none"></audio>
+
+<script>
+(() => {
+  // ✅ PWA: registra Service Worker (precisa estar em HTTPS)
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("./sw.js").catch(() => {});
+    });
+  }
+
+  // ====== CONFIG ======
+  const SESSION_ENDPOINT = "https://openai-realtime-proxy.eduardo-wakim.workers.dev/session";
+  const MODEL_MAX_OUTPUT_TOKENS = 256;
+
+  const VOICE_ON  = 0.030;
+  const VOICE_OFF = 0.020;
+  const SILENCE_MS = 700;
+
+  // ✅ limiar do áudio remoto para considerar "robô falando"
+  const REMOTE_ON = 0.006; // ajuste fino: 0.004 a 0.012
+
+  let audioCtx, stream;
+  let sendTrack = null;
+  let micAnalyser, micData, micSource;
+
+  // ✅ remoto analisado DIRETO do MediaStream do ontrack (mais robusto)
+  let remoteStream = null;
+  let remoteAnalyser = null, remoteData = null;
+  let remoteTap = null; // MediaStreamSource
+  let remoteGainSilent = null;
+
+  let pc = null, dc = null;
+  let running = false;
+
+  // Wake Lock
+  let wakeLock = null;
+  async function requestWakeLock(){
+    try{
+      if (!("wakeLock" in navigator)) return;
+      wakeLock = await navigator.wakeLock.request("screen");
+      wakeLock.addEventListener("release", () => { wakeLock = null; });
+    }catch(e){
+      wakeLock = null;
+      console.log("WakeLock não disponível/permitido:", e);
+    }
+  }
+  async function releaseWakeLock(){
+    try{ await wakeLock?.release(); }catch(_){}
+    wakeLock = null;
+  }
+
+  // Fullscreen
+  const fsBtn = document.getElementById("fsBtn");
+  function setFsUI(on){
+    fsBtn.classList.toggle("on", !!on);
+    fsBtn.setAttribute("aria-pressed", on ? "true" : "false");
+  }
+  async function toggleFullscreen(){
+    try{
+      if (!document.fullscreenElement){
+        if (!document.fullscreenEnabled) return;
+        await document.documentElement.requestFullscreen({ navigationUI: "hide" }).catch(async () => {
+          await document.documentElement.requestFullscreen();
+        });
+      } else {
+        await document.exitFullscreen();
+      }
+    }catch(e){
+      console.log("Fullscreen falhou:", e);
+    } finally {
+      setFsUI(!!document.fullscreenElement);
+    }
+  }
+  document.addEventListener("fullscreenchange", () => setFsUI(!!document.fullscreenElement));
+  fsBtn.addEventListener("click", toggleFullscreen);
+
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible" && running) requestWakeLock();
+    if (document.visibilityState !== "visible") releaseWakeLock();
+  });
+  window.addEventListener("beforeunload", releaseWakeLock);
+
+  // DOM
+  const mouth  = document.getElementById("mouth");
+  const tongue = document.getElementById("tongue");
+  const teeth  = document.getElementById("teeth");
+  const bar    = document.getElementById("bar");
+
+  const startBtn = document.getElementById("startBtn");
+  const micBtn   = document.getElementById("micBtn");
+  const btnTitle = document.getElementById("btnTitle");
+  const btnSub   = document.getElementById("btnSub");
+  const hint     = document.getElementById("hint");
+  const pillText = document.getElementById("pillText");
+  const remoteAudio = document.getElementById("remoteAudio");
+
+  // ===== OLHOS (pupilas) =====
+const pupilL = document.querySelector(".eye.left .pupil");
+const pupilR = document.querySelector(".eye.right .pupil");
+
+const PUPIL_MAX = 10;         // px (limite de movimento)
+const EYE_SMOOTH = 0.18;      // 0.10 mais suave / 0.25 mais rápido
+let eyeX = 0, eyeY = 0;
+let targetX = 0, targetY = 0;
+let nextSaccadeAt = 0;
+
+// vamos armazenar o nível do microfone aqui:
+let lastMicLevel = 0;
+
+function clamp2(v, a, b){ return Math.max(a, Math.min(b, v)); }
+
+function setPupils(dx, dy){
+  dx = clamp2(dx, -PUPIL_MAX, PUPIL_MAX);
+  dy = clamp2(dy, -PUPIL_MAX, PUPIL_MAX);
+  const t = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+  if (pupilL) pupilL.style.transform = t;
+  if (pupilR) pupilR.style.transform = t;
+}
+
+function rand(min, max){ return min + Math.random() * (max - min); }
+
+function eyesLoop(){
+  if (!running){
+    requestAnimationFrame(eyesLoop);
+    return;
+  }
+
+  const now = performance.now();
+
+  // "Falando no microfone": speaking OU mic acima do limiar (ajuste se quiser)
+  const userTalking = speaking || (lastMicLevel >= VOICE_ON * 0.75);
+
+  // Decide novo alvo de vez em quando (saccade)
+  if (now >= nextSaccadeAt){
+    if (userTalking){
+      // enquanto você fala: movimentos menores e mais frequentes + leve olhar pra baixo
+      targetX = rand(-4, 4);
+      targetY = rand(2, 7);
+      nextSaccadeAt = now + rand(180, 380);
+    } else {
+      // silêncio: passeia mais amplo e mais lento
+      targetX = rand(-8, 8);
+      targetY = rand(-6, 6);
+      nextSaccadeAt = now + rand(600, 1400);
+    }
+  }
+
+  // Suaviza o movimento
+  eyeX += (targetX - eyeX) * EYE_SMOOTH;
+  eyeY += (targetY - eyeY) * EYE_SMOOTH;
+
+  setPupils(eyeX, eyeY);
+  requestAnimationFrame(eyesLoop);
+}
+
+  // Boca (somente REMOTO)
+  const SENS = 2.15;      // um pouco mais forte pro remoto
+  const OPEN_MIN = 0.80;
+  const OPEN_MAX = 1.95;
+  const SMOOTH = 0.62;
+  let smoothLevel = 0;
+
+  const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
+  function computeRms(u8){
+    let sum=0;
+    for (let i=0;i<u8.length;i++){
+      const x = (u8[i]-128)/128;
+      sum += x*x;
+    }
+    return Math.sqrt(sum/u8.length);
+  }
+
+  function setButtonState(state){
+    if (state === "idle") {
+      startBtn.disabled = false;
+      btnTitle.textContent = "Conectar voz";
+      btnSub.textContent = "Fica ouvindo e responde só quando você falar 🙂";
+    }
+    if (state === "loading") {
+      startBtn.disabled = true;
+      btnTitle.textContent = "Conectando...";
+      btnSub.textContent = "Abrindo sessão de voz…";
+    }
+    if (state === "ok") {
+      startBtn.disabled = true;
+      btnTitle.textContent = "Conectado";
+      btnSub.textContent = "Ouvindo… (responde quando você falar)";
+    }
+  }
+
+  function stopStream(){
+    try { stream?.getTracks()?.forEach(t => t.stop()); } catch(_){}
+    stream = null;
+    try{ sendTrack?.stop(); }catch(_){}
+    sendTrack = null;
+  }
+
+  function stopSession(){
+    try { dc?.close(); } catch(_){}
+    dc = null;
+    try { pc?.close(); } catch(_){}
+    pc = null;
+
+    remoteAudio.srcObject = null;
+    remoteStream = null;
+
+    // limpa nodes remotos
+    try{ remoteTap?.disconnect(); }catch(_){}
+    try{ remoteAnalyser?.disconnect(); }catch(_){}
+    try{ remoteGainSilent?.disconnect(); }catch(_){}
+    remoteTap = null; remoteAnalyser = null; remoteGainSilent = null; remoteData = null;
+
+    micSource = null;
+    micAnalyser = null;
+    micData = null;
+
+    stopStream();
+    running = false;
+    releaseWakeLock();
+    setButtonState("idle");
+    hint.style.display = "grid";
+    pillText.innerHTML = "<strong>Dica:</strong> toque para conectar e permita o microfone.";
+    micBtn.style.display = "flex";
+  }
+
+  function sendEvent(obj){
+    if (!dc || dc.readyState !== "open") return;
+    dc.send(JSON.stringify(obj));
+  }
+
+  function ensureAudioCtx(){
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!audioCtx) audioCtx = new AC();
+    if (audioCtx.state === "suspended") audioCtx.resume().catch(()=>{});
+  }
+
+  function setupMicAnalyser(){
+    ensureAudioCtx();
+    if (!micAnalyser){
+      micAnalyser = audioCtx.createAnalyser();
+      micAnalyser.fftSize = 1024;
+      micData = new Uint8Array(micAnalyser.fftSize);
+      micSource = audioCtx.createMediaStreamSource(stream);
+      micSource.connect(micAnalyser);
+    }
+  }
+
+  // ✅ NOVO: analisa remoto direto do MediaStream (não do <audio>)
+  function setupRemoteAnalyserFromStream(ms){
+    ensureAudioCtx();
+
+    if (!remoteAnalyser){
+      remoteAnalyser = audioCtx.createAnalyser();
+      remoteAnalyser.fftSize = 1024;
+      remoteData = new Uint8Array(remoteAnalyser.fftSize);
+
+      remoteGainSilent = audioCtx.createGain();
+      remoteGainSilent.gain.value = 0; // não duplica som
+      remoteAnalyser.connect(remoteGainSilent);
+      remoteGainSilent.connect(audioCtx.destination);
+    }
+
+    // cria/atualiza o tap do stream
+    try{ remoteTap?.disconnect(); }catch(_){}
+    remoteTap = audioCtx.createMediaStreamSource(ms);
+    remoteTap.connect(remoteAnalyser);
+  }
+
+  // ====== AUTO VAD ======
+  let speaking = false;
+  let lastVoiceAt = 0;
+
+  function vadLoop(){
+    if (!running || !micAnalyser || !micData || !stream){
+      requestAnimationFrame(vadLoop);
+      return;
+    }
+
+    micAnalyser.getByteTimeDomainData(micData);
+    const level = computeRms(micData);
+    const t = sendTrack;
+
+    if (!speaking){
+      if (level >= VOICE_ON){
+        speaking = true;
+        lastVoiceAt = performance.now();
+        if (t) t.enabled = true;
+        sendEvent({ type: "response.cancel" });
+        sendEvent({ type: "input_audio_buffer.clear" });
+      } else {
+        if (t) t.enabled = false;
+      }
+    } else {
+      if (level >= VOICE_OFF){
+        lastVoiceAt = performance.now();
+      } else {
+        if (performance.now() - lastVoiceAt > SILENCE_MS){
+          speaking = false;
+          if (t) t.enabled = false;
+
+          sendEvent({ type: "input_audio_buffer.commit" });
+          sendEvent({
+            type: "response.create",
+            response: {
+              instructions: "Responda exclusivamente em português do Brasil.",
+              output_modalities: ["audio"],
+              max_output_tokens: MODEL_MAX_OUTPUT_TOKENS
+            }
+          });
+        }
+      }
+    }
+
+    requestAnimationFrame(vadLoop);
+  }
+
+  // ====== ANIMAÇÃO ======
+  // ✅ Barra = MIC
+  // ✅ Boca = REMOTO
+  function loopAnim(){
+    if (!running){
+      requestAnimationFrame(loopAnim);
+      return;
+    }
+
+    // --- MIC -> barra ---
+    let levelMic = 0;
+    if (micAnalyser && micData){
+      micAnalyser.getByteTimeDomainData(micData);
+      levelMic = computeRms(micData);
+    }
+    lastMicLevel = levelMic;
+    const pct = clamp(levelMic * 140, 0, 100);
+    bar.style.width = pct + "%";
+
+    // --- REMOTO -> boca ---
+    let levelRemote = 0;
+    if (remoteAnalyser && remoteData){
+      remoteAnalyser.getByteTimeDomainData(remoteData);
+      levelRemote = computeRms(remoteData);
+    }
+
+    // se não está falando, fecha a boca suavemente
+    const robotTalking = levelRemote >= REMOTE_ON;
+    const target = robotTalking ? (levelRemote * SENS) : 0;
+
+    // smoothing
+    smoothLevel = smoothLevel + (target - smoothLevel) * (1 - SMOOTH);
+    const level = smoothLevel;
+
+    const open = clamp(OPEN_MIN + level * (OPEN_MAX - OPEN_MIN), OPEN_MIN, OPEN_MAX);
+    const mouthH = clamp(52 + level * 95, 48, 140);
+
+    mouth.style.height = mouthH + "%";
+    mouth.style.transform = `scaleY(${open})`;
+
+    const teethOn = clamp((level - 0.03) * 9, 0, 1);
+    teeth.style.opacity = teethOn.toFixed(2);
+
+    const tOpacity = clamp(level * 2.2, 0, 1);
+    const tScale = clamp(0.78 + level * 0.95, 0.78, 1.65);
+    tongue.style.opacity = tOpacity.toFixed(2);
+    tongue.style.transform = `translateX(-50%) scale(${tScale})`;
+
+    requestAnimationFrame(loopAnim);
+  }
+
+  // ====== Realtime connect ======
+  async function connectRealtime(){
+    if (running) return;
+    running = true;
+    setButtonState("loading");
+    requestWakeLock();
+
+    try{
+      if (!navigator.mediaDevices?.getUserMedia){
+        throw new Error("getUserMedia não disponível neste navegador.");
+      }
+
+      ensureAudioCtx();
+
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation:true, noiseSuppression:true, autoGainControl:true }
+      });
+
+      pc = new RTCPeerConnection();
+
+      // Recebe áudio do modelo
+      pc.ontrack = (e) => {
+        // ✅ usa o stream do próprio track
+        remoteStream = e.streams?.[0] || new MediaStream([e.track]);
+        remoteAudio.srcObject = remoteStream;
+
+        // ✅ garante play (alguns celulares precisam)
+        remoteAudio.play().catch(()=>{});
+
+        // ✅ analisador robusto do remoto
+        setupRemoteAnalyserFromStream(remoteStream);
+      };
+
+      // mic clone para enviar controlado pelo VAD
+      const micTrack = stream.getAudioTracks()[0];
+      micTrack.enabled = true;
+
+      sendTrack = micTrack.clone();
+      sendTrack.enabled = false;
+
+      const sendStream = new MediaStream([sendTrack]);
+      pc.addTrack(sendTrack, sendStream);
+
+      dc = pc.createDataChannel("oai-events");
+
+      dc.onopen = () => {
+        sendEvent({
+          type: "session.update",
+          session: {
+            type: "realtime",
+            model: "gpt-realtime-mini",
+            instructions: `Responda sempre exclusivamente em português do Brasil.
+Nunca responda em inglês.
+Seja simpático, como um robô amigável para crianças.
+Respostas curtas e claras.`,
+            output_modalities: ["audio"],
+            audio: {
+              input: {
+                turn_detection: {
+                  type: "semantic_vad",
+                  create_response: false,
+                  interrupt_response: true
+                }
+              },
+              output: { voice: "shimmer" }
+            }
+          }
+        });
+
+        setButtonState("ok");
+        hint.style.display = "none";
+        setTimeout(() => { micBtn.style.display = "none"; }, 800);
+
+        setupMicAnalyser();
+        vadLoop();
+        loopAnim();
+        eyesLoop();
+      };
+
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+
+      const resp = await fetch(SESSION_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/sdp" },
+        body: offer.sdp
+      });
+
+      if (!resp.ok){
+        const err = await resp.text().catch(()=> "");
+        throw new Error(`Worker/OpenAI erro ${resp.status}: ${err || resp.statusText}`);
+      }
+
+      const answerSdp = await resp.text();
+      await pc.setRemoteDescription({ type:"answer", sdp: answerSdp });
+
+    } catch(e){
+      console.error(e);
+      stopSession();
+      setButtonState("idle");
+      hint.style.display = "grid";
+      pillText.innerHTML =
+        "<strong>Ops!</strong> Não consegui conectar voz em tempo real.<br/>" +
+        "Verifique se você permitiu o microfone e se o Worker tem a variável <strong>OPENAI_API_KEY</strong>.";
+    }
+  }
+
+  startBtn.addEventListener("click", connectRealtime);
+
+  setButtonState("idle");
+  hint.style.display = "grid";
+  pillText.innerHTML =
+    "<strong>Dica:</strong> clique em <strong>Conectar voz</strong> e permita o microfone.<br/>" +
+    "Depois disso ele fica ouvindo e responde só quando você falar.";
+})();
+</script>
+</body>
+</html>
